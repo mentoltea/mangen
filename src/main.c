@@ -30,8 +30,14 @@ void help(FILE* stream) {
     fprintf(stream, "  mangen example -e dir_2 -e '*.png'\n");
 }
 
+// GIT_COMMIT_HASH is passed by the build system -DGIT_COMMIT_HASH="..."
+#ifndef GIT_COMMIT_HASH
+#define GIT_COMMIT_HASH "unknown"
+#endif
+
 void version(FILE* stream) {
     fprintf(stream, "mangen %d.%d.%d by %s\n", VERSION_MAJOR, VERSION_MIDDLE, VERSION_MINOR, VERSION_AUTHOR_STR);
+    fprintf(stream, "commit %s\n", GIT_COMMIT_HASH);
 }
 
 void usage(FILE* stream) {
