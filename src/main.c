@@ -39,9 +39,6 @@ void usage(FILE* stream) {
     fprintf(stream, "mangen -h for help\n");
 }
 
-// The walker builds file paths as dir_path + '/' + relative path
-// ('/' is not added if dir_path already ends with a separator),
-// so the relative part starts right after that prefix.
 static const char* relative_path(const char* path, const char* dir_path) {
     size_t len = strlen(dir_path);
     bool has_sep = len > 0 && (dir_path[len - 1] == '/'
@@ -85,7 +82,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    iterarive_walk(cli.dir_path, hash_file_and_store);
+    set_excludes(cli.excludes.items, cli.excludes.count);
+    iterarive_walk(cli.dir_path, hash_file_and_store, is_excluded);
     print_manifest(stdout, get_pairs(), cli.dir_path);
 
     reset_pairs();

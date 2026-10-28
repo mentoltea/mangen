@@ -26,4 +26,11 @@ struct Pairs get_pairs();
 
 void hash_file_and_store(const char* path);
 
+
+bool match_pattern(const char* pattern, const char* str);
+
+void set_excludes(char** patterns, size_t count);
+
+bool is_excluded(const char* name);
+
 #endif // LOGIC_H

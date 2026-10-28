@@ -9,6 +9,9 @@
 
 static struct Pairs pairs;
 
+static char** exclude_patterns = NULL;
+static size_t exclude_count = 0;
+
 // The file is fed to the hash in chunks, so memory use does not depend
 // on the file size.
 bool hash_file(const char* path, struct Hash* out) {
@@ -62,4 +65,41 @@ void hash_file_and_store(const char* path) {
 
     struct Pair pair = {.path = path_copy, .hash = hash};
     da_append(pairs, pair);
+}
+
+
+
+bool match_pattern(const char* pattern, const char* str) {
+    const char* star = NULL;   // last '*' seen in pattern
+    const char* retry = NULL;  // position in str to retry from after that '*'
+
+    while (*str) {
+        if (*pattern == '*') {
+            star = pattern++;
+            retry = str;
+        } else if (*pattern == '.' || *pattern == *str) {
+            pattern++;
+            str++;
+        } else if (star) {
+            pattern = star + 1;
+            str = ++retry;
+        } else {
+            return false;
+        }
+    }
+
+    while (*pattern == '*') pattern++;
+    return *pattern == '\0';
+}
+
+void set_excludes(char** patterns, size_t count) {
+    exclude_patterns = patterns;
+    exclude_count = count;
+}
+
+bool is_excluded(const char* name) {
+    for (size_t i = 0; i < exclude_count; i++) {
+        if (match_pattern(exclude_patterns[i], name)) return true;
+    }
+    return false;
 }

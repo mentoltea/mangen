@@ -105,7 +105,10 @@ static bool read_dir_sorted(const char* dir_path, struct Strings* names) {
     return true;
 }
 
-void iterarive_walk(const char* path, void (*callback)(const char*)) {
+// skip(name) gets the bare entry name (not the full path); if it returns true
+// the entry is ignored, and for a directory its whole subtree is never read.
+// skip may be NULL. The root path itself is never passed to skip.
+void iterarive_walk(const char* path, void (*callback)(const char*), bool (*skip)(const char*)) {
     if (!is_directory(path)) {
         fprintf(stderr, "mangen: '%s' is not a directory or is not accessible\n", path);
         return;
@@ -132,6 +135,9 @@ void iterarive_walk(const char* path, void (*callback)(const char*)) {
 
         struct Strings subdirs = {0};
         for (size_t i = 0; i < names.count; i++) {
+            // checked before stat(), so excluded directories are not even opened
+            if (skip && skip(names.items[i])) continue;
+
             char* full = join_path(dir_path, names.items[i]);
             if (!full) {
                 fprintf(stderr, "mangen: out of memory\n");
