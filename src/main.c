@@ -1,7 +1,9 @@
 #include <stdio.h>
 
 #include "cli.h"
+#include "logic.h"
 #include "version.h"
+#include "walker.h"
 
 void help(FILE* stream) {
     fprintf(stream, "Usage: mangen [DIR_PATH] [OPTIONS]\n");
@@ -37,9 +39,35 @@ void usage(FILE* stream) {
     fprintf(stream, "mangen -h for help\n");
 }
 
+// The walker builds file paths as dir_path + '/' + relative path
+// ('/' is not added if dir_path already ends with a separator),
+// so the relative part starts right after that prefix.
+static const char* relative_path(const char* path, const char* dir_path) {
+    size_t len = strlen(dir_path);
+    bool has_sep = len > 0 && (dir_path[len - 1] == '/'
+#ifdef _WIN32
+                               || dir_path[len - 1] == '\\'
+#endif
+                              );
+    return path + len + (has_sep ? 0 : 1);
+}
+
+static void print_manifest(FILE* stream, struct Pairs pairs, const char* dir_path) {
+    char hex[HASH_HEX_SIZE];
+    for (size_t i = 0; i < pairs.count; i++) {
+        hash_to_hex(&pairs.items[i].hash, hex);
+        fprintf(stream, "%s : %s\n", relative_path(pairs.items[i].path, dir_path), hex);
+    }
+}
+
 int main(int argc, char** argv) {
     struct cli cli = parse_arguments(argc, argv);
     
+    if (!cli.valid) {
+        usage(stderr);
+        return 1;
+    }
+
     if (cli.help) {
         help(stdout);
         return 0;
@@ -49,18 +77,18 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    if (!cli.valid) {
-        usage(stderr);
+    if (!cli.dir_path) cli.dir_path = ".";
+
+    if (!is_directory(cli.dir_path)) {
+        fprintf(stderr, "mangen: '%s' is not a directory or is not accessible\n", cli.dir_path);
+        da_free(cli.excludes);
         return 1;
     }
 
-    if (!cli.dir_path) cli.dir_path = ".";
+    iterarive_walk(cli.dir_path, hash_file_and_store);
+    print_manifest(stdout, get_pairs(), cli.dir_path);
 
-    printf("mangen %s", cli.dir_path);
-    for (size_t i=0; i<cli.excludes.count; i++) {
-        printf(" -e %s", cli.excludes.items[i]);
-    }
-    printf("\n");
-
+    reset_pairs();
+    da_free(cli.excludes);
     return 0;
 }
