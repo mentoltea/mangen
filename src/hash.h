@@ -26,4 +26,3 @@ void hash_final(struct HashCtx* ctx, struct Hash* out);
 void hash_to_hex(const struct Hash* hash, char* buf);
 
 #endif // HASH_H
-HASH_H
