@@ -1,6 +1,7 @@
 #ifndef LOGIC_H
 #define LOGIC_H
 
+#include <stdbool.h>
 #include <string.h>
 
 #include "hash.h"
@@ -8,7 +9,7 @@
 
 struct Pair {
     char* path;
-    uint32_t hash;
+    struct Hash hash;
 };
 
 struct Pairs {
@@ -17,8 +18,8 @@ struct Pairs {
     size_t capacity;
 };
 
-uint32_t hash_file(const char* path);
 
+bool hash_file(const char* path, struct Hash* out);
 
 void reset_pairs();
 struct Pairs get_pairs();
